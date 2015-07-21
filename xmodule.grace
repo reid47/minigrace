@@ -324,6 +324,8 @@ method generateGCT(path) fromValues(values) modules(modules) is confidential {
     def meths = list.empty
     def confidentials = list.empty
     var theDialect := false
+    def types = list.empty
+    def gct = dictionary.empty
     for (values) do { v->
         if (v.kind == "vardec") then {
             if (v.isReadable) then {
@@ -371,7 +373,6 @@ method generateGCT(path) fromValues(values) modules(modules) is confidential {
             v.providedNames.do { each -> meths.push(each) }
         }
     }
-    def gct = dictionary.empty
     gct.at "modules" put(modules.asList.sort)
     gct.at "path" put(list.with(path))
     gct.at "public" put(meths.sort)
@@ -412,6 +413,7 @@ method generateGCT(path) fromValues(values) modules(modules) is confidential {
         }
     }
     gct.at "classes" put(classes)
+    gct.at "types" put(types)
 
     def freshmeths = collections.list.new
     gct.put("fresh-methods", freshmeths)
