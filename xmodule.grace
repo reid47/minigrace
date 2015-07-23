@@ -266,9 +266,10 @@ method generateGCT(path)fromValues(values)modules(modules) {
 var methodtypes := list.empty
 def typeVisitor = object {
     inherits ast.baseVisitor
+    var literalCount := 1
     method visitTypeLiteral(lit) {
         for (lit.methods) do { meth ->
-            var mtstr := ""
+            var mtstr := ":{literalCount} "
             for (meth.signature) do { part ->
                 mtstr := mtstr ++ part.name
                 if ((part.params.size > 0) || (part.vararg != false)) then {
@@ -312,12 +313,30 @@ def typeVisitor = object {
     }
     method visitOp(op) {
         if ((op.value=="&") || (op.value=="|")) then {
-            if ((op.left.kind=="identifier") || (op.left.kind=="member")) then {
+            def leftkind = op.left.kind
+            def rightkind = op.right.kind
+            if ((leftkind=="identifier") || (leftkind=="member")) then {
                 var typeIdent := op.left.toGrace(0)
-                methodtypes.addFirst(":& {typeIdent}")
+                methodtypes.push(":{op.value} {typeIdent}")
+            } elseif(leftkind=="typeliteral") then {
+                literalCount := literalCount + 1
+                methodtypes.push(":{op.value} {literalCount}")
+                visitTypeLiteral(op.left)
+            } elseif (leftkind=="op") then {
+                visitOp(op.left)
+            }
+            if ((rightkind=="identifier") || (rightkind=="member")) then {
+                var typeIdent := op.right.toGrace(0)
+                methodtypes.push(":{op.value} {typeIdent}")
+            } elseif(rightkind=="typeliteral") then {
+                literalCount := literalCount + 1
+                methodtypes.push(":{op.value} {literalCount}")
+                visitTypeLiteral(op.right)
+            } elseif (rightkind=="op") then {
+                visitOp(op.right)
             }
         }
-        return true
+        return false
     }
 }
 method generateGCT(path) fromValues(values) modules(modules) is confidential {
